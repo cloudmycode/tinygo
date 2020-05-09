@@ -107,13 +107,16 @@ v2 := r.Group("/v2")
 r.Run(":10080")
 ```
 ### Plugin
-curl "http://localhost:10080/v2/hello/Bill"
+curl "http://localhost:10080/"
 
 This demo show you how to write a plugin.
 For example, traceTime plugin shows the time cost for each response in the console log.
 ```
 r := tiny.New()
 r.AddPlugin(traceTime())
+r.GET("/", func(c *tiny.Context) {
+    c.HTML(http.StatusOK, "<h1>Hello TinyGo</h1>")
+})
 r.Run(":10080")
 
 // Print request time
