@@ -7,6 +7,7 @@ Copy tiny folder to your project root, done.
 ## Samples
 ### GET
 curl "http://localhost:10080/"
+**Return** Hello TinyGo
 ```
 r := tiny.New()
 r.GET("/", func(c *tiny.Context) {
@@ -16,8 +17,7 @@ r.Run(":10080")
 ```
 ### GET param
 curl "http://localhost:10080/hello?name=Bill"
-
-return hello Bill, you're at /hello
+**Return** hello Bill, you're at /hello
 ```
 r := tiny.New()
 r.GET("/hello", func(c *tiny.Context) {
