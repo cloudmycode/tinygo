@@ -14,3 +14,5 @@ Create main.go file:
     r.Run(":10080")
 Test: 
 curl "http://localhost:10080/"
+
+# Demo 2 POST
