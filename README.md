@@ -39,6 +39,7 @@ r.Run(":10080")
 ```
 ### GET param with * match
 curl "http://localhost:10080/assets/path1/path2/filename"
+"path1/path2/filename" will save to [filepath]
 ```
 r := tiny.New()
 r.GET("/assets/*filepath", func(c *tiny.Context) {
@@ -70,8 +71,8 @@ r.Run(":10080")
 r := tiny.New()
 v1 := r.Group("/v1")
 {
-	// curl "http://localhost:10080/v1/"
-	v1.GET("/", func(c *tiny.Context) {
+    // curl "http://localhost:10080/v1/"
+    v1.GET("/", func(c *tiny.Context) {
         c.HTML(http.StatusOK, "<h1>Hello Tiny Group v1</h1>")
     })
 
@@ -94,7 +95,7 @@ v2 := r.Group("/v2")
         "username": c.PostForm("username"),
         "password": c.PostForm("password"),
         })
-	})
+    })
 }
 r.Run(":10080")
 ```
