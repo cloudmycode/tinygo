@@ -1,4 +1,4 @@
-package tinygo
+package tiny
 
 import (
 	"encoding/json"
@@ -8,7 +8,6 @@ import (
 	"path"
 	"runtime"
 	"strings"
-	"time"
 )
 
 type (
@@ -17,10 +16,10 @@ type (
 
 	// RouterGroup defines router group
 	RouterGroup struct {
-		prefix      string
-		middlewares []HandlerFunc // support middleware
-		parent      *RouterGroup  // support nesting
-		engine      *Engine       // all groups share a Engine instance
+		prefix  string
+		plugins []HandlerFunc // support plugins
+		parent  *RouterGroup  // support nesting
+		engine  *Engine       // all groups share a Engine instance
 	}
 
 	// Engine implement the interface of ServeHTTP
@@ -30,23 +29,19 @@ type (
 		groups []*RouterGroup // store all groups
 	}
 
-	// J defines the json map data used by json Encoder
-	J map[string]interface{}
+	// H defines the json map data used by json Encoder
+	H map[string]interface{}
 
 	// Context defines the http life time data
 	Context struct {
-		// origin objects
-		Writer http.ResponseWriter
-		Req    *http.Request
-		// request info
-		Path   string
-		Method string
-		Params map[string]string
-		// response info
+		Writer     http.ResponseWriter
+		Req        *http.Request
+		Path       string
+		Method     string
+		Params     map[string]string
 		StatusCode int
-		// middleware
-		handlers []HandlerFunc
-		index    int
+		handlers   []HandlerFunc
+		index      int
 	}
 
 	router struct {
@@ -55,10 +50,10 @@ type (
 	}
 
 	node struct {
-		pattern  string  // 待匹配路由，例如 /p/:lang
-		part     string  // 路由中的一部分，例如 :lang
-		children []*node // 子节点，例如 [doc, tutorial, intro]
-		isWild   bool    // 是否精确匹配，part 含有 : 或 * 时为true
+		pattern  string
+		part     string
+		children []*node
+		isWild   bool
 	}
 )
 
@@ -70,10 +65,10 @@ func New() *Engine {
 	return e
 }
 
-// Default use Logger() & Recovery middlewares
+// Default use Recovery plugins
 func Default() *Engine {
 	engine := New()
-	engine.Use(Logger(), Recovery())
+	engine.AddPlugin(Recovery())
 	return engine
 }
 
@@ -110,15 +105,14 @@ func (engine *Engine) Run(addr string) (err error) {
 	return http.ListenAndServe(addr, engine)
 }
 
-// Use is defined to add middleware to the group
-func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
-	group.middlewares = append(group.middlewares, middlewares...)
+// AddPlugin is defined to add plugins to the group
+func (group *RouterGroup) AddPlugin(plugins ...HandlerFunc) {
+	group.plugins = append(group.plugins, plugins...)
 }
 
 // create static handler
 func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
 	absolutePath := path.Join(group.prefix, relativePath)
-	log.Printf("[%s] %s", group.prefix, relativePath)
 	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
 	return func(c *Context) {
 		file := c.Param("filepath")
@@ -136,8 +130,6 @@ func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileS
 func (group *RouterGroup) Static(relativePath string, root string) {
 	handler := group.createStaticHandler(relativePath, http.Dir(root))
 	urlPattern := path.Join(relativePath, "/*filepath")
-	// Register GET handlers
-	log.Printf("[urlPattern] %s", urlPattern)
 	group.GET(urlPattern, handler)
 }
 
@@ -145,7 +137,7 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	var middlewares []HandlerFunc
 	for _, group := range engine.groups {
 		if strings.HasPrefix(req.URL.Path, group.prefix) {
-			middlewares = append(middlewares, group.middlewares...)
+			middlewares = append(middlewares, group.plugins...)
 		}
 	}
 	c := newContext(w, req)
@@ -176,7 +168,7 @@ func (c *Context) Next() {
 // Fail defines http error returns
 func (c *Context) Fail(code int, err string) {
 	c.index = len(c.handlers)
-	c.JSON(code, J{"message": err})
+	c.JSON(code, H{"message": err})
 }
 
 // PostForm get http post params
@@ -320,28 +312,7 @@ func (r *router) handle(c *Context) {
 
 // end router
 
-// trie
-
-// 第一个匹配成功的节点，用于插入
-func (n *node) matchChild(part string) *node {
-	for _, child := range n.children {
-		if child.part == part || child.isWild {
-			return child
-		}
-	}
-	return nil
-}
-
-// 所有匹配成功的节点，用于查找
-func (n *node) matchChildren(part string) []*node {
-	nodes := make([]*node, 0)
-	for _, child := range n.children {
-		if child.part == part || child.isWild {
-			nodes = append(nodes, child)
-		}
-	}
-	return nodes
-}
+// node
 func (n *node) insert(pattern string, parts []string, height int) {
 	if len(parts) == height {
 		n.pattern = pattern
@@ -378,11 +349,41 @@ func (n *node) search(parts []string, height int) *node {
 	return nil
 }
 
+func (n *node) matchChild(part string) *node {
+	for _, child := range n.children {
+		if child.part == part || child.isWild {
+			return child
+		}
+	}
+	return nil
+}
+
+func (n *node) matchChildren(part string) []*node {
+	nodes := make([]*node, 0)
+	for _, child := range n.children {
+		if child.part == part || child.isWild {
+			nodes = append(nodes, child)
+		}
+	}
+	return nodes
+}
+
 // end trie
 
-// middle ware
+// Recovery is a default plugin that revocer service when fatal error occour
+func Recovery() HandlerFunc {
+	return func(c *Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				message := fmt.Sprintf("%s", err)
+				log.Printf("%s\n\n", trace(message))
+				c.Fail(http.StatusInternalServerError, "Internal Server Error")
+			}
+		}()
+		c.Next()
+	}
+}
 
-// print stack trace for debug
 func trace(message string) string {
 	var pcs [32]uintptr
 	n := runtime.Callers(3, pcs[:]) // skip first 3 caller
@@ -395,30 +396,4 @@ func trace(message string) string {
 		str.WriteString(fmt.Sprintf("\n\t%s:%d", file, line))
 	}
 	return str.String()
-}
-
-func Recovery() HandlerFunc {
-	return func(c *Context) {
-		defer func() {
-			if err := recover(); err != nil {
-				message := fmt.Sprintf("%s", err)
-				log.Printf("%s\n\n", trace(message))
-				c.Fail(http.StatusInternalServerError, "Internal Server Error")
-			}
-		}()
-
-		c.Next()
-	}
-}
-
-// Logger defines as a demo function for middle ware
-func Logger() HandlerFunc {
-	return func(c *Context) {
-		// Start timer
-		t := time.Now()
-		// Process request
-		c.Next()
-		// Calculate resolution time
-		log.Printf("[%d] %s in %v", c.StatusCode, c.Req.RequestURI, time.Since(t))
-	}
 }

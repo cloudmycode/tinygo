@@ -1,7 +1,7 @@
 module example
 
-go 1.12.5
+go 1.13
 
 require tinygo v0.0.1
 
-replace tinygo => ./tinygo
+replace tiny => ./tiny

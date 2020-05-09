@@ -1,11 +1,9 @@
 package main
 
-import (
-	"tinygo/tinygo"
-)
+import "tinygo/tiny"
 
 func main() {
-	r := tinygo.New()
+	r := tiny.New()
 	r.Static("/assets", "/Users/wangyang/Documents/Code/gopath/src/tinygo/static")
 	r.Run(":9999")
 }
