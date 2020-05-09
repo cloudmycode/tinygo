@@ -100,6 +100,9 @@ r.Run(":10080")
 ```
 ### Plugin
 curl "http://localhost:10080/v2/hello/Bill"
+
+This demo show you how to write a plugin.
+For example, traceTime plugin shows the time cost for each response in the console log.
 ```
 r := tiny.New()
 r.AddPlugin(traceTime())
@@ -107,13 +110,10 @@ r.Run(":10080")
 
 // Print request time
 func traceTime() tiny.HandlerFunc {
-	return func(c *tiny.Context) {
-		// Start timer
-		t := time.Now()
-		// Process request
-		c.Next()
-		// Calculate resolution time
-		log.Printf("[%d] %s in %v", c.StatusCode, c.Req.RequestURI, time.Since(t))
-	}
+    return func(c *tiny.Context) {
+        t := time.Now() // Run at beginning
+        c.Next()        // Process request
+        log.Printf("[%d] %s in %v", c.StatusCode, c.Req.RequestURI, time.Since(t)) // Run at the end of response
+    }
 }
 ```
