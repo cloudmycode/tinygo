@@ -7,10 +7,10 @@ Copy tiny folder to your project, Done.
 
 # Demo 1 GET
 Create main.go file:
-    r := tiny.New()
-    r.GET("/", func(c *tiny.Context) {
-        c.HTML(http.StatusOK, "<h1>Hello TinyGo</h1>")
-    })
+	r := tiny.New()
+	r.GET("/", func(c *tiny.Context) {
+		c.HTML(http.StatusOK, "<h1>Hello TinyGo</h1>")
+	})
     r.Run(":10080")
 Test: 
 curl "http://localhost:10080/"
