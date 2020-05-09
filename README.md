@@ -5,7 +5,7 @@ One file go web framework. Quickly build a web app by golang use TinyGo framewor
 Copy tiny folder to your project root, done.
 
 ## Samples
-- GET
+### GET
 curl "http://localhost:10080/"
 ```
 r := tiny.New()
