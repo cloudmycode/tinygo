@@ -21,6 +21,8 @@ r.Run(":10080")
 ```
 ### GET param
 curl "http://localhost:10080/hello?name=Bill"
+
+"Bill" will save to c.Query("name")
 ```
 r := tiny.New()
 r.GET("/hello", func(c *tiny.Context) {
@@ -30,6 +32,8 @@ r.Run(":10080")
 ```
 ### GET param in URL path
 curl "http://localhost:10080/hello/Bill"
+
+"Bill" will save to c.Param("name")
 ```
 r := tiny.New()
 r.GET("/hello/:name", func(c *tiny.Context) {
@@ -39,7 +43,8 @@ r.Run(":10080")
 ```
 ### GET param with * match
 curl "http://localhost:10080/assets/path1/path2/filename"
-"path1/path2/filename" will save to [filepath]
+
+"path1/path2/filename" will save to c.Param("filepath")
 ```
 r := tiny.New()
 r.GET("/assets/*filepath", func(c *tiny.Context) {
@@ -49,6 +54,8 @@ r.Run(":10080")
 ```
 ### POST param
 curl -X POST -d "username=Bill&password=1234" "http://localhost:10080/login"
+
+"Bill" will save to c.PostForm("username")
 ```
 r := tiny.New()
 r.POST("/login", func(c *tiny.Context) {
