@@ -14,3 +14,14 @@ r.GET("/", func(c *tiny.Context) {
 })
 r.Run(":10080")
 ```
+### GET param
+curl "http://localhost:10080/hello?name=Bill"
+
+return hello Bill, you're at /hello
+```
+r := tiny.New()
+r.GET("/hello", func(c *tiny.Context) {
+    c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
+})
+r.Run(":10080")
+```
