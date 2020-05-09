@@ -2,7 +2,12 @@
 One file go web framework. Quickly build a web app by golang use TinyGo framework.
 
 ## How to use
-Copy tiny folder to your project root, done.
+Copy tiny folder to your project root. Done. Now you get:
+- Http Utilites
+- Routing
+- Routing Group
+- Plugin
+- Service Panic Recover
 
 ## Samples
 ### GET
